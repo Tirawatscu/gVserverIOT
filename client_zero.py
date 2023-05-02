@@ -70,7 +70,7 @@ class App:
                 self.buf[:]  = data2   # Convert from float to bytes for sending
             bufferFlag = not bufferFlag
             # .send() behaves as per .recv()
-            self.conn.send(buf)
+            self.conn.send(self.buf)
             await asyncio.sleep(0.002)  # Write every 2 ms  = 
 
     def shutdown(self):
