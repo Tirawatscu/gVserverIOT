@@ -22,8 +22,8 @@ class App:
     def __init__(self, verbose):
         self.verbose = verbose
         self.conn = None
-        buf = (ctypes.c_double * 12)()  # Buffer for 12 double precision data   /  3 Ch x 4 Data each / Interleave data
-        command = None
+        self.buf = (ctypes.c_double * 12)()  # Buffer for 12 double precision data   /  3 Ch x 4 Data each / Interleave data
+        self.command = None
 
     async def start(self):
         self.verbose and print('App awaiting connection.')
@@ -44,16 +44,22 @@ class App:
     async def reader(self):
         self.verbose and print('Started reader')
         while True:
-            # Attempt to read data: in the event of an outage, .recv()
-            # pauses until the connection is re-established.
-            data = b''
-            while b'\n' not in data:
-                data += self.conn.recv(1024)
+            try:
+                # Attempt to read data: in the event of an outage, .recv()
+                # pauses until the connection is re-established.
+                data = b''
+                while b'\n' not in data:
+                    data += self.conn.recv(1024)
 
-            line = data.decode('utf-8').rstrip()
-            command = json.loads(line)
-            # Receives [restart count, uptime in secs]
-            self.verbose and print('Got', command , 'from server app')
+                line = data.decode('utf-8').rstrip()
+                command = json.loads(line)
+                # Receives [restart count, uptime in secs]
+                self.verbose and print('Got', command , 'from server app')
+            except OSError as e:
+                print("Error reading data:", e)
+                self.conn.close()
+                self.conn = None
+                await self.connect()
 
     # Send [approx application uptime in secs, (re)connect count]
     async def writer(self):
@@ -64,14 +70,14 @@ class App:
         while True:
             if bufferFlag :
                 self.verbose and print('Sent', data1, 'to server app\n')
-                buf[:]  = data1   # Convert from float to bytes for sending
+                self.buf[:]  = data1   # Convert from float to bytes for sending
             else:
                 self.verbose and print('Sent', data2, 'to server app\n')
-                buf[:]  = data2   # Convert from float to bytes for sending
+                self.buf[:]  = data2   # Convert from float to bytes for sending
             bufferFlag = not bufferFlag
             # .send() behaves as per .recv()
-            self.conn.send(buf)
-            await asyncio.sleep(0.002)  # Write every 2 ms  = 
+            self.conn.send(self.buf)
+            await asyncio.sleep(0.002) 
 
     def shutdown(self):
         if self.conn:
