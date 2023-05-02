@@ -15,7 +15,7 @@ from gpiozero import LED
 led = LED(17)  # Optional LED
 # End of optional LED
 
-from . import local
+import local
 import ctypes
 
 class App:
