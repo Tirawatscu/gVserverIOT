@@ -46,7 +46,7 @@ async def _readid(s, to_secs):
     start = time.time()
     while True:
         try:
-            d = s.recv(4096).decode()
+            d = s.recv(4096).decode('ISO-8859-1')
         except OSError as e:
             err = e.args[0]
             if err == errno.EAGAIN:
