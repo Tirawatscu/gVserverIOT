@@ -38,25 +38,17 @@ class App:
     async def reader(self):
         print('Started reader')
         while True:
-            line = await self.conn.readline()  # Pause in event of outage
-            line = line.strip().encode()  # Convert the string to bytes
-            newData = struct.unpack('12d', line)  # unpack 12 double type data to list ck double type data to list 
-            self.data1.append(newData[0:3])
-            self.data2.append(newData[4:7])
-            self.data3.append(newData[8:11])
-#            file1.write(newData[0:3])
-#            file2.write(newData[4:7])
-#            file3.write(newData[8:11])
-            # Receives [restart count, uptime in secs, mem_free]
-            if len(line) == 96:
-                newData = struct.unpack('12d', line)  # unpack 12 double type data to list
+            data = await self.conn.read(96)  # Read 96 bytes directly
+            if len(data) == 96:
+                newData = struct.unpack('12d', data)  # unpack 12 double type data to list
                 self.data1.append(newData[0:3])
                 self.data2.append(newData[4:7])
                 self.data3.append(newData[8:11])
                 print('Got', newData, 'from remote', self.client_id)
             else:
                 print("Unexpected data length. Skipping unpacking.")
-                print('Got', newData, 'from remote', self.client_id)
+                print('Got', data, 'from remote', self.client_id)
+
 
     # Send
     # [approx app uptime in secs/5, received client uptime, received mem_free]

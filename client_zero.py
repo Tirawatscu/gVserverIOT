@@ -23,7 +23,7 @@ class App:
         self.verbose = verbose
         self.conn = None
         self.buf = (ctypes.c_double * 12)()  # Buffer for 12 double precision data   /  3 Ch x 4 Data each / Interleave data
-        self.command = None
+        command = None
 
     async def start(self):
         self.verbose and print('App awaiting connection.')
@@ -44,22 +44,16 @@ class App:
     async def reader(self):
         self.verbose and print('Started reader')
         while True:
-            try:
-                # Attempt to read data: in the event of an outage, .recv()
-                # pauses until the connection is re-established.
-                data = b''
-                while b'\n' not in data:
-                    data += self.conn.recv(1024)
+            # Attempt to read data: in the event of an outage, .recv()
+            # pauses until the connection is re-established.
+            data = b''
+            while b'\n' not in data:
+                data += self.conn.recv(1024)
 
-                line = data.decode('utf-8').rstrip()
-                command = json.loads(line)
-                # Receives [restart count, uptime in secs]
-                self.verbose and print('Got', command , 'from server app')
-            except OSError as e:
-                print("Error reading data:", e)
-                self.conn.close()
-                self.conn = None
-                await self.connect()
+            line = data.decode('utf-8').rstrip()
+            command = json.loads(line)
+            # Receives [restart count, uptime in secs]
+            self.verbose and print('Got', command , 'from server app')
 
     # Send [approx application uptime in secs, (re)connect count]
     async def writer(self):
@@ -76,8 +70,8 @@ class App:
                 self.buf[:]  = data2   # Convert from float to bytes for sending
             bufferFlag = not bufferFlag
             # .send() behaves as per .recv()
-            self.conn.send(self.buf)
-            await asyncio.sleep(0.002) 
+            self.conn.send(buf)
+            await asyncio.sleep(0.002)  # Write every 2 ms  = 
 
     def shutdown(self):
         if self.conn:
